@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galinhada! - Protótipo</title>
+    <style>
+        :root {
+            --bg-grass: #81c784;
+            --text-light: #ffffff;
+            --p1-color: #ff5252;
+            --p2-color: #448aff;
+            --p3-color: #ffb300;
+            --p4-color: #b388ff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2e7d32;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 900px;
+            height: 700px;
+            background-color: var(--bg-grass);
+            border: 8px solid #5d4037;
+            border-radius: 16px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* Enfeites do mapa (árvores e pedras) */
+        .scenery {
+            position: absolute;
+            font-size: 40px;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3));
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--text-light);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            backdrop-filter: blur(4px);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        #scoreboard {
+            display: flex;
+            gap: 15px;
+        }
+
+        .score-box {
+            padding: 5px 10px;
+            border-radius: 6px;
+            border-bottom: 3px solid transparent;
+        }
+        .score-box.p1 { border-color: var(--p1-color); }
+        .score-box.p2 { border-color: var(--p2-color); }
+        .score-box.p3 { border-color: var(--p3-color); }
+        .score-box.p4 { border-color: var(--p4-color); }
+
+        /* Entidades do Jogo */
+        .entity {
+            position: absolute;
+            transform: translate(-50%, -50%); /* Centraliza o elemento no x,y */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.05s linear;
+        }
+
+        .player {
+            width: 40px;
+            height: 40px;
+            font-size: 30px;
+            z-index: 10;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            filter: drop-shadow(2px 4px 2px rgba(0,0,0,0.3));
+        }
+
+        .player.p1 { border: 3px solid var(--p1-color); }
+        .player.p2 { border: 3px solid var(--p2-color); }
+        .player.p3 { border: 3px solid var(--p3-color); }
+        .player.p4 { border: 3px solid var(--p4-color); }
+
+        .chicken {
+            width: 30px;
+            height: 30px;
+            font-size: 24px;
+            z-index: 5;
+            filter: drop-shadow(1px 3px 2px rgba(0,0,0,0.3));
+        }
+
+        /* Animação para dar vida às galinhas */
+        @keyframes wobble {
+            0% { transform: translate(-50%, -50%) rotate(-10deg); }
+            50% { transform: translate(-50%, -50%) rotate(10deg); }
+            100% { transform: translate(-50%, -50%) rotate(-10deg); }
+        }
+        .chicken.moving {
+            animation: wobble 0.3s infinite;
+        }
+
+        #barn {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+            filter: drop-shadow(4px 8px 4px rgba(0,0,0,0.4));
+        }
+
+        /* Telas de Overlay */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 200;
+        }
+
+        .overlay h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ffeb3b;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .overlay button {
+            padding: 15px 30px;
+            font-size: 24px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background 0.2s;
+        }
+        .overlay button:hover { background: #f57c00; transform: scale(1.05); }
+        .overlay button:active { transform: scale(0.95); }
+
+        .hidden { display: none !important; }
+
+        .ranking-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 30px;
+            font-size: 24px;
+            text-align: left;
+        }
+        .ranking-list li { margin: 10px 0; padding: 10px 20px; background: rgba(255,255,255,0.1); border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="scenery-container"></div>
+        <div id="barn">🏠</div>
+
+        <div id="ui-layer">
+            <div class="panel">⏳ Tempo: <span id="timer">90</span>s</div>
+            <div id="scoreboard" class="panel">
+                <div class="score-box p1">👨‍🌾 P1: <span id="score-p1">0</span></div>
+                <div class="score-box p2">🧑‍🌾 P2: <span id="score-p2">0</span></div>
+                <div class="score-box p3">👩‍🌾 P3: <span id="score-p3">0</span></div>
+                <div class="score-box p4">🥷 P4: <span id="score-p4">0</span></div>
+            </div>
+            <div class="panel">🐔: <span id="chicken-count">0</span></div>
+        </div>
+
+        <div id="start-screen" class="overlay">
+            <h1>Galinhada! 🐔</h1>
+            <p style="font-size: 18px; margin-bottom: 30px; text-align: center; max-width: 600px;">
+                Pegue as galinhas e leve até o celeiro!<br><br>
+                <strong>P1:</strong> W A S D | <strong>P2:</strong> Setas | <strong>P3:</strong> T F G H | <strong>P4:</strong> I J K L
+            </p>
+            <button onclick="startGame()">Começar Jogo</button>
+        </div>
+
+        <div id="end-screen" class="overlay hidden">
+            <h1 id="winner-text">Fim de Jogo!</h1>
+            <ul id="ranking" class="ranking-list"></ul>
+            <button onclick="resetGame()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURAÇÕES E ESTADO DO JOGO ---
+        const GAME_WIDTH = 900;
+        const GAME_HEIGHT = 700;
+        const MATCH_DURATION = 90;
+        const MAX_CHICKENS = 8;
+        
+        let gameLoopId;
+        let timeLeft = MATCH_DURATION;
+        let lastTime = 0;
+        let timerAccumulator = 0;
+        let isPlaying = false;
+        
+        // Elementos DOM
+        const container = document.getElementById('game-container');
+        const timerEl = document.getElementById('timer');
+        const chickenCountEl = document.getElementById('chicken-count');
+        const barn = { x: GAME_WIDTH / 2, y: GAME_HEIGHT / 2, radius: 50 }; // Hitbox do celeiro
+
+        // Estado do teclado
+        const keys = {};
+        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+        // Áudio Context (Sons Gerados via Código)
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            const now = audioCtx.currentTime;
+            if (type === 'grab') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'score') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.setValueAtTime(800, now + 0.1);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'end') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 1);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1);
+                osc.start(now); osc.stop(now + 1);
+            }
+        }
+
+        // --- CLASSES ---
+
+        class Player {
+            constructor(id, emoji, colorClass, startX, startY, controls) {
+                this.id = id;
+                this.x = startX;
+                this.y = startY;
+                this.speed = 4;
+                this.controls = controls;
+                this.score = 0;
+                this.carrying = null;
+                this.radius = 20;
+                
+                // DOM Element
+                this.element = document.createElement('div');
+                this.element.className = `entity player ${colorClass}`;
+                this.element.innerText = emoji;
+                container.appendChild(this.element);
+                
+                this.scoreEl = document.getElementById(`score-p${id}`);
+                this.updateRender();
+            }
+
+            update() {
+                let dx = 0; let dy = 0;
+                
+                if (keys[this.controls.up]) dy -= 1;
+                if (keys[this.controls.down]) dy += 1;
+                if (keys[this.controls.left]) dx -= 1;
+                if (keys[this.controls.right]) dx += 1;
+
+                // Normalizar diagonal
+                if (dx !== 0 && dy !== 0) {
+                    const length = Math.sqrt(dx*dx + dy*dy);
+                    dx /= length; dy /= length;
+                }
+
+                this.x += dx * this.speed;
+                this.y += dy * this.speed;
+
+                // Limites da tela
+                this.x = Math.max(this.radius, Math.min(GAME_WIDTH - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(GAME_HEIGHT - this.radius, this.y));
+
+                // Colisão com o celeiro (Entrega)
+                if (this.carrying) {
+                    const distToBarn = Math.hypot(this.x - barn.x, this.y - barn.y);
+                    if (distToBarn < this.radius + barn.radius) {
+                        this.score++;
+                        this.scoreEl.innerText = this.score;
+                        playSound('score');
+                        
+                        // Remove galinha e gera uma nova
+                        this.carrying.destroy();
+                        this.carrying = null;
+                        spawnChicken();
+                    }
+                }
+
+                this.updateRender();
+            }
+
+            updateRender() {
+                this.element.style.left = `${this.x}px`;
+                this.element.style.top = `${this.y}px`;
+                
+                // Vira o emoji dependendo da direção
+                if (keys[this.controls.left]) {
+                    this.element.style.transform = "translate(-50%, -50%) scaleX(-1)";
+                } else if (keys[this.controls.right]) {
+                    this.element.style.transform = "translate(-50%, -50%) scaleX(1)";
+                }
+            }
+        }
+
+        class Chicken {
+            constructor() {
+                this.radius = 15;
+                this.spawnSafe();
+                this.state = 'idle'; // idle, wandering, carried
+                this.carrier = null;
+                
+                // IA variables
+                this.vx = 0; this.vy = 0;
+                this.speed = 1.5;
+                this.stateTimer = Math.random() * 60 + 30; // frames
+                
+                // DOM Element
+                this.element = document.createElement('div');
+                this.element.className = 'entity chicken';
+                this.element.innerText = '🐔';
+                container.appendChild(this.element);
+                
+                this.updateRender();
+                chickens.push(this);
+                updateChickenCount();
+            }
+
+            spawnSafe() {
+                // Nasce longe do celeiro
+                do {
+                    this.x = Math.random() * (GAME_WIDTH - 60) + 30;
+                    this.y = Math.random() * (GAME_HEIGHT - 60) + 30;
+                } while (Math.hypot(this.x - barn.x, this.y - barn.y) < 150);
+            }
+
+            update() {
+                if (this.state === 'carried') {
+                    // Segue o jogador com pequeno offset visual acima da cabeça
+                    this.x = this.carrier.x;
+                    this.y = this.carrier.y - 25;
+                    this.element.classList.remove('moving');
+                } else {
+                    // IA Comportamento Aleatório
+                    this.stateTimer--;
+                    if (this.stateTimer <= 0) {
+                        if (this.state === 'idle') {
+                            this.state = 'wandering';
+                            const angle = Math.random() * Math.PI * 2;
+                            this.vx = Math.cos(angle) * this.speed;
+                            this.vy = Math.sin(angle) * this.speed;
+                            this.stateTimer = Math.random() * 100 + 50; // Anda por um tempo
+                            this.element.classList.add('moving');
+                        } else {
+                            this.state = 'idle';
+                            this.vx = 0; this.vy = 0;
+                            this.stateTimer = Math.random() * 80 + 30; // Fica parada um tempo
+                            this.element.classList.remove('moving');
+                        }
+                    }
+
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    // Bate nas bordas e volta
+                    if (this.x < this.radius || this.x > GAME_WIDTH - this.radius) { this.vx *= -1; this.x = Math.max(this.radius, Math.min(GAME_WIDTH - this.radius, this.x)); }
+                    if (this.y < this.radius || this.y > GAME_HEIGHT - this.radius) { this.vy *= -1; this.y = Math.max(this.radius, Math.min(GAME_HEIGHT - this.radius, this.y)); }
+
+                    // Verifica colisão com jogadores para ser pega
+                    for (let p of players) {
+                        if (!p.carrying) {
+                            const dist = Math.hypot(this.x - p.x, this.y - p.y);
+                            if (dist < this.radius + p.radius) {
+                                this.state = 'carried';
+                                this.carrier = p;
+                                p.carrying = this;
+                                playSound('grab');
+                                break;
+                            }
+                        }
+                    }
+                }
+                this.updateRender();
+            }
+
+            updateRender() {
+                this.element.style.left = `${this.x}px`;
+                this.element.style.top = `${this.y}px`;
+                if (this.vx < 0 && this.state !== 'carried') {
+                    this.element.style.transform = "translate(-50%, -50%) scaleX(-1)";
+                } else if (this.vx > 0 && this.state !== 'carried') {
+                    this.element.style.transform = "translate(-50%, -50%) scaleX(1)";
+                }
+            }
+
+            destroy() {
+                this.element.remove();
+                chickens = chickens.filter(c => c !== this);
+                updateChickenCount();
+            }
+        }
+
+        // --- INICIALIZAÇÃO E LOOP PRINCIPAL ---
+
+        let players = [];
+        let chickens = [];
+
+        function setupScenery() {
+            const sc = document.getElementById('scenery-container');
+            sc.innerHTML = ''; // Limpa cenário antigo
+            const items = ['🌳', '🌳', '🌲', '🪨', '🌾', '🌾', '🌾'];
+            for(let i=0; i<15; i++) {
+                const el = document.createElement('div');
+                el.className = 'scenery';
+                el.innerText = items[Math.floor(Math.random() * items.length)];
+                
+                // Posiciona nas bordas
+                let px, py;
+                if(Math.random() > 0.5) {
+                    px = Math.random() * GAME_WIDTH;
+                    py = Math.random() > 0.5 ? Math.random() * 100 : GAME_HEIGHT - Math.random() * 100;
+                } else {
+                    px = Math.random() > 0.5 ? Math.random() * 100 : GAME_WIDTH - Math.random() * 100;
+                    py = Math.random() * GAME_HEIGHT;
+                }
+                
+                el.style.left = `${px}px`;
+                el.style.top = `${py}px`;
+                sc.appendChild(el);
+            }
+        }
+
+        function spawnChicken() {
+            if (chickens.length < MAX_CHICKENS) {
+                new Chicken();
+            }
+        }
+
+        function updateChickenCount() {
+            chickenCountEl.innerText = chickens.length;
+        }
+
+        function startGame() {
+            initAudio(); // Ativa áudio após clique
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            
+            // Reset state
+            timeLeft = MATCH_DURATION;
+            timerEl.innerText = timeLeft;
+            lastTime = performance.now();
+            
+            // Limpa entidades anteriores
+            players.forEach(p => p.element.remove());
+            chickens.forEach(c => c.element.remove());
+            players = [];
+            chickens = [];
+
+            // Cria jogadores nos cantos
+            players.push(new Player(1, '👨‍🌾', 'p1', 50, 50, {up:'w', down:'s', left:'a', right:'d'}));
+            players.push(new Player(2, '🧑‍🌾', 'p2', GAME_WIDTH-50, 50, {up:'arrowup', down:'arrowdown', left:'arrowleft', right:'arrowright'}));
+            players.push(new Player(3, '👩‍🌾', 'p3', 50, GAME_HEIGHT-50, {up:'t', down:'g', left:'f', right:'h'}));
+            players.push(new Player(4, '🥷', 'p4', GAME_WIDTH-50, GAME_HEIGHT-50, {up:'i', down:'k', left:'j', right:'l'}));
+
+            players.forEach(p => p.scoreEl.innerText = "0");
+
+            setupScenery();
+
+            // Spawna galinhas iniciais
+            for(let i=0; i<MAX_CHICKENS; i++) {
+                spawnChicken();
+            }
+
+            isPlaying = true;
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function gameLoop(timestamp) {
+            if (!isPlaying) return;
+
+            // Timer Lógica
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            timerAccumulator += deltaTime;
+
+            if (timerAccumulator >= 1000) {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                timerAccumulator -= 1000;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                    return;
+                }
+            }
+
+            // Update Entities
+            players.forEach(p => p.update());
+            chickens.forEach(c => c.update());
+
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            isPlaying = false;
+            cancelAnimationFrame(gameLoopId);
+            playSound('end');
+            
+            const endScreen = document.getElementById('end-screen');
+            const rankingEl = document.getElementById('ranking');
+            const winnerText = document.getElementById('winner-text');
+            
+            // Sort ranking
+            const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+            
+            winnerText.innerText = `Vencedor: Jogador ${sortedPlayers[0].id}! 🏆`;
+            
+            rankingEl.innerHTML = '';
+            sortedPlayers.forEach((p, index) => {
+                const li = document.createElement('li');
+                const medals = ['🥇', '🥈', '🥉', '👏'];
+                li.innerHTML = `${medals[index]} <strong>Jogador ${p.id}</strong>: ${p.score} galinhas`;
+                rankingEl.appendChild(li);
+            });
+
+            endScreen.classList.remove('hidden');
+        }
+
+        function resetGame() {
+            startGame();
+        }
+
+    </script>
+</body>
+</html>
