@@ -3,52 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LóbiLóbi - Galinhada!</title>
+    <title>LóbiLóbi - Galinhada Pro!</title>
     
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
-        /* CSS GERAL */
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #2ecc71; color: white; overflow: hidden; }
         
-        /* TELAS */
         #host-screen, #client-screen { display: none; width: 100vw; height: 100vh; }
         
         /* ================= TELA DO PC (HOST) ================= */
         #host-screen { flex-direction: column; align-items: center; justify-content: center; background: #27ae60; }
-        #game-header { width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; }
+        #game-header { width: 900px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; }
         #scoreboard h2, #timer { margin: 0; font-size: 24px; }
         #game-canvas { background-color: #82ccdd; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); border: 5px solid #2c3e50; }
         
-        /* Painel do QR Code */
-        #qr-panel { position: absolute; right: 20px; top: 20px; background: white; padding: 15px; border-radius: 10px; color: black; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
-        #qr-panel h3 { margin-bottom: 10px; font-size: 16px; }
+        /* Painel Lateral de Entrada e Lobby */
+        #lobby-panel { position: absolute; right: 20px; top: 20px; bottom: 20px; width: 260px; background: white; padding: 20px; border-radius: 15px; color: black; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: space-between; }
+        #qrcode { display: flex; justify-content: center; margin: 15px 0; }
+        #player-list { text-align: left; background: #eee; padding: 10px; border-radius: 8px; flex: 1; overflow-y: auto; margin-bottom: 15px; font-size: 14px; }
+        #btn-start-game { background: #e67e22; border: none; color: white; padding: 12px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; box-shadow: 0 4px #d35400; }
+        #btn-start-game:active { transform: translateY(2px); box-shadow: 0 2px #d35400; }
         
-        /* Modal de Fim de Jogo */
-        #game-over-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #f1c40f; color: #2c3e50; padding: 40px; border-radius: 20px; text-align: center; border: 5px solid #e67e22; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #game-over-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #f1c40f; color: #2c3e50; padding: 40px; border-radius: 20px; text-align: center; border: 5px solid #e67e22; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10; }
         
         /* ================= TELA DO CELULAR (CLIENTE) ================= */
-        #client-screen { flex-direction: column; background: #2c3e50; justify-content: space-between; }
-        #client-header { text-align: center; padding: 15px; background: #34495e; font-size: 20px; font-weight: bold; }
-        #client-status { font-size: 14px; color: #f1c40f; margin-top: 5px; }
+        #client-screen { flex-direction: column; background: #2c3e50; justify-content: space-between; position: relative; }
+        #client-header { text-align: center; padding: 15px; background: #34495e; font-size: 18px; font-weight: bold; }
+        #client-status { font-size: 13px; color: #f1c40f; display: block; margin-top: 4px; }
         
-        /* Controles Touch */
-        #controls { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; flex: 1; }
+        /* Tela de Setup de Nome no Celular */
+        #name-setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 30px; background: #34495e; text-align: center; position: absolute; top:0; left:0; width:100%; z-index: 5; }
+        #name-input { padding: 15px; border-radius: 8px; border: none; font-size: 18px; width: 100%; margin: 20px 0; text-align: center; }
+        #btn-join-lobby { background: #2ecc71; color: white; padding: 15px; font-size: 18px; border: none; border-radius: 8px; width: 100%; font-weight: bold; }
+
+        /* Controles de Jogo Touch */
+        #gamepad-area { display: none; justify-content: space-between; align-items: center; padding: 30px; flex: 1; position: relative; }
         
-        /* D-PAD */
-        .dpad { display: grid; grid-template-columns: 70px 70px 70px; grid-template-rows: 70px 70px 70px; gap: 5px; }
-        .d-btn { background: rgba(255,255,255,0.2); border-radius: 15px; border: 2px solid rgba(255,255,255,0.4); display: flex; justify-content: center; align-items: center; font-size: 30px; border-bottom: 5px solid rgba(0,0,0,0.3); }
-        .d-btn:active { background: rgba(255,255,255,0.5); transform: translateY(3px); border-bottom: 2px solid rgba(0,0,0,0.3); }
-        #btn-up { grid-column: 2; grid-row: 1; }
-        #btn-left { grid-column: 1; grid-row: 2; }
-        #btn-right { grid-column: 3; grid-row: 2; }
-        #btn-down { grid-column: 2; grid-row: 3; }
+        /* Joystick Virtual */
+        #joystick-container { width: 140px; height: 140px; background: rgba(255,255,255,0.1); border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; }
+        #joystick-knob { width: 60px; height: 60px; background: rgba(255,255,255,0.6); border-radius: 50%; position: absolute; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.05s linear; }
         
-        /* Botão de Ação */
-        #btn-action { width: 100px; height: 100px; border-radius: 50%; background: #e74c3c; border: 3px solid #c0392b; border-bottom: 8px solid #900; color: white; font-size: 40px; display: flex; justify-content: center; align-items: center; font-weight: bold; }
-        #btn-action:active { transform: translateY(5px); border-bottom: 3px solid #900; background: #c0392b; }
+        /* Botão de Ação Redondo Grande */
+        #btn-action { width: 110px; height: 110px; border-radius: 50%; background: #e74c3c; border: 3px solid #c0392b; border-bottom: 8px solid #900; color: white; font-size: 45px; display: flex; justify-content: center; align-items: center; }
+        #btn-action:active { transform: translateY(4px); border-bottom: 4px solid #900; background: #c0392b; }
         
         .loading { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 24px; }
     </style>
@@ -57,48 +57,56 @@
 
     <div id="host-screen">
         <div id="game-header">
-            <div id="scoreboard">Jogadores conectados: 0</div>
+            <div id="scoreboard">Aguardando fazendeiros entrarem...</div>
             <div id="timer">⏱️ 90s</div>
         </div>
-        <canvas id="game-canvas" width="800" height="600"></canvas>
+        <canvas id="game-canvas" width="900" height="650"></canvas>
         
-        <div id="qr-panel">
-            <h3>Jogue pelo Celular!</h3>
-            <div id="qrcode"></div>
-            <small style="display:block; margin-top:5px; font-size:11px; color:#555;">Escaneie para entrar</small>
+        <div id="lobby-panel">
+            <div>
+                <h3 style="font-size:15px;">Escaneie para Jogar!</h3>
+                <div id="qrcode"></div>
+            </div>
+            <div>
+                <h4 style="text-align:left; margin-bottom:5px;">Lobby (<span id="player-count">0</span>):</h4>
+                <div id="player-list">Ninguém na sala ainda...</div>
+            </div>
+            <button id="btn-start-game">COMEÇAR PARTIDA 🏁</button>
         </div>
 
         <div id="game-over-modal">
-            <h1>Fim de Jogo! 🏆</h1>
+            <h1>Fim da Galinhada! 🏆</h1>
             <h2 id="winner-text" style="margin: 20px 0;"></h2>
-            <p>Recarregue a página (F5) para jogar novamente.</p>
+            <p>Atualize a página (F5) para reiniciar o servidor.</p>
         </div>
     </div>
 
     <div id="client-screen">
+        <div id="name-setup-screen">
+            <h2>Bora pegar galinha! 🐔</h2>
+            <p style="margin-top:10px; color:#bdc3c7;">Insira seu nome de fazendeiro:</p>
+            <input type="text" id="name-input" maxlength="10" placeholder="Seu Nome" value="Fazendeiro">
+            <button id="btn-join-lobby">Entrar na Sala</button>
+        </div>
+
         <div id="client-header">
-            LóbiLóbi <br>
-            <span id="client-status">⏳ Conectando à fazenda...</span>
+            <span id="player-display-name">Fazendeiro</span>
+            <span id="client-status">Aguardando o Host iniciar a partida...</span>
         </div>
         
-        <div id="controls">
-            <div class="dpad">
-                <div class="d-btn" id="btn-up">⬆️</div>
-                <div class="d-btn" id="btn-left">⬅️</div>
-                <div class="d-btn" id="btn-right">➡️</div>
-                <div class="d-btn" id="btn-down">⬇️</div>
+        <div id="gamepad-area">
+            <div id="joystick-container">
+                <div id="joystick-knob"></div>
             </div>
             <div id="btn-action">🐔</div>
         </div>
     </div>
 
-    <div id="loading" class="loading">Iniciando LóbiLóbi...</div>
+    <div id="loading" class="loading">Configurando LóbiLóbi...</div>
 
     <script>
-        // ================= LÓGICA DE ROTINAS E MODO =================
         const urlParams = new URLSearchParams(window.location.search);
         const hostIdToJoin = urlParams.get('join');
-        
         document.getElementById('loading').style.display = 'none';
 
         if (hostIdToJoin) {
@@ -107,90 +115,106 @@
             initHostMode();
         }
 
-        // ================= CÓDIGO DO HOST (PC / TELA) =================
+        // ================= JOGO NO PC (HOST) =================
         function initHostMode() {
             document.getElementById('host-screen').style.display = 'flex';
             
             const peer = new Peer();
-            let hostId = null;
             let players = {};
             let gameStarted = false;
             let timeRemaining = 90;
-            let lastTime = 0;
 
-            // Variáveis do Jogo
             const canvas = document.getElementById('game-canvas');
             const ctx = canvas.getContext('2d');
-            const cw = canvas.width;
-            const ch = canvas.height;
+            const cw = canvas.width, ch = canvas.height;
 
-            // Elementos do Mapa
-            const barn = { x: cw / 2, y: 100, radius: 60 };
+            const barn = { x: cw / 2, y: 120, radius: 60 };
             const chickens = [];
             const obstacles = [];
 
-            // Gerar Galinhas
-            for(let i=0; i<5; i++) spawnChicken();
-
-            // Gerar Obstáculos (Árvores e pedras)
-            for(let i=0; i<6; i++) {
+            // Spawna 6 galinhas iniciais
+            for(let i=0; i<6; i++) spawnChicken();
+            // Obstáculos fixos mapeados
+            for(let i=0; i<7; i++) {
                 obstacles.push({
-                    x: Math.random() * (cw - 100) + 50,
-                    y: Math.random() * (ch - 200) + 150,
-                    emoji: Math.random() > 0.5 ? '🌳' : '🪨',
-                    radius: 20
+                    x: Math.random() * (cw - 150) + 70,
+                    y: Math.random() * (ch - 250) + 200,
+                    emoji: Math.random() > 0.4 ? '🌳' : '🪨',
+                    radius: 25
                 });
             }
 
             peer.on('open', (id) => {
-                hostId = id;
-                console.log("Host criado! ID:", hostId);
-                
-                // Monta a URL de entrada (URL atual + ?join=ID)
-                const joinUrl = window.location.origin + window.location.pathname + "?join=" + hostId;
-                
-                // Gera o QR Code
-                new QRCode(document.getElementById("qrcode"), {
-                    text: joinUrl,
-                    width: 150,
-                    height: 150
-                });
+                const joinUrl = window.location.origin + window.location.pathname + "?join=" + id;
+                new QRCode(document.getElementById("qrcode"), { text: joinUrl, width: 140, height: 140 });
             });
 
-            // Quando um celular se conecta
             peer.on('connection', (conn) => {
                 const playerId = conn.peer;
-                
-                // Cria o jogador
-                players[playerId] = {
-                    x: Math.random() * (cw - 100) + 50,
-                    y: ch - 50,
-                    color: `hsl(${Math.random() * 360}, 100%, 50%)`, // Identificador visual
-                    score: 0,
-                    hasChicken: false,
-                    speed: 4,
-                    inputs: { up: false, down: false, left: false, right: false, action: false },
-                    conn: conn
-                };
 
-                updateScoreboard();
-
-                // Recebe os inputs do celular
                 conn.on('data', (data) => {
+                    // Trata o registro de nome do jogador
+                    if (data.type === 'join') {
+                        players[playerId] = {
+                            name: data.name,
+                            x: Math.random() * (cw - 100) + 50,
+                            y: ch - 70,
+                            color: `hsl(${Math.random() * 360}, 85%, 50%)`,
+                            score: 0,
+                            hasChicken: false,
+                            speed: 4.5,
+                            joystick: { x: 0, y: 0 },
+                            action: false,
+                            radius: 22,
+                            conn: conn
+                        };
+                        updateLobbyUI();
+                    }
+                    
+                    // Atualiza coordenadas vindas do analógico do celular
                     if (data.type === 'input' && players[playerId]) {
-                        players[playerId].inputs = data.state;
+                        players[playerId].joystick = data.joystick;
+                        players[playerId].action = data.action;
                     }
                 });
 
                 conn.on('close', () => {
                     delete players[playerId];
+                    updateLobbyUI();
                     updateScoreboard();
                 });
+            });
 
-                // Inicia o timer se for o primeiro jogador
+            function updateLobbyUI() {
+                const listEl = document.getElementById('player-list');
+                const countEl = document.getElementById('player-count');
+                const pKeys = Object.keys(players);
+                
+                countEl.innerText = pKeys.length;
+                if(pKeys.length === 0) {
+                    listEl.innerText = "Ninguém na sala ainda...";
+                    return;
+                }
+                listEl.innerHTML = pKeys.map(k => `<div style="color:${players[k].color}; font-weight:bold;">• ${players[k].name}</div>`).join('');
+            }
+
+            document.getElementById('btn-start-game').addEventListener('click', () => {
+                if (Object.keys(players).length === 0) {
+                    alert("Aguarde pelo menos um jogador entrar pelo celular!");
+                    return;
+                }
                 if (!gameStarted) {
                     gameStarted = true;
+                    document.getElementById('btn-start-game').disabled = true;
+                    document.getElementById('btn-start-game').style.background = '#7f8c8d';
+                    
+                    // Alerta todos os celulares conectados que o jogo começou
+                    for (let id in players) {
+                        players[id].conn.send({ type: 'start' });
+                    }
+                    
                     startTimer();
+                    requestAnimationFrame(gameLoop);
                 }
             });
 
@@ -206,247 +230,281 @@
             }
 
             function updateScoreboard() {
-                let html = '<h2>Pontuações:</h2>';
+                let html = '';
                 for (let id in players) {
-                    html += `<span style="color:${players[id].color}; font-weight:bold; margin-right: 15px;">👨‍🌾: ${players[id].score}</span>`;
+                    html += `<b style="color:${players[id].color}; margin-right:20px;">${players[id].name}: ${players[id].score}</b>`;
                 }
-                if (Object.keys(players).length === 0) html = "Aguardando fazendeiros...";
-                document.getElementById('scoreboard').innerHTML = html;
+                document.getElementById('scoreboard').innerHTML = html || "Partida rodando!";
             }
 
             function spawnChicken() {
                 chickens.push({
                     x: Math.random() * (cw - 100) + 50,
-                    y: Math.random() * (ch - 200) + 150, // Evita nascer em cima do celeiro
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: (Math.random() - 0.5) * 2,
-                    radius: 15,
-                    timer: 0
+                    y: Math.random() * (ch - 240) + 200,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: (Math.random() - 0.5) * 1.5,
+                    radius: 14,
+                    changeDirTimer: Math.random() * 100
                 });
             }
 
-            function updatePhysics() {
-                if (timeRemaining <= 0) return;
-
-                // Move Jogadores
+            function gameLoop() {
+                // 1. Física e Movimentação
                 for (let id in players) {
                     let p = players[id];
-                    let currentSpeed = p.hasChicken ? p.speed * 0.5 : p.speed; // Fica lento com galinha
-                    
-                    if (p.inputs.up) p.y -= currentSpeed;
-                    if (p.inputs.down) p.y += currentSpeed;
-                    if (p.inputs.left) p.x -= currentSpeed;
-                    if (p.inputs.right) p.x += currentSpeed;
+                    let currentSpeed = p.hasChicken ? p.speed * 0.55 : p.speed;
 
-                    // Limites da tela
-                    p.x = Math.max(20, Math.min(cw - 20, p.x));
-                    p.y = Math.max(20, Math.min(ch - 20, p.y));
+                    // Mover baseado no vetor do analógico do celular
+                    p.x += p.joystick.x * currentSpeed;
+                    p.y += p.joystick.y * currentSpeed;
 
-                    // Lógica de Ação (Pegar/Entregar Galinha)
-                    if (p.inputs.action) {
-                        // 1. Tentar pegar galinha
-                        if (!p.hasChicken) {
-                            for (let i = 0; i < chickens.length; i++) {
-                                let c = chickens[i];
-                                let dist = Math.hypot(p.x - c.x, p.y - c.y);
-                                if (dist < p.radius + c.radius + 30) { // +30 é a margem de acerto
-                                    p.hasChicken = true;
-                                    chickens.splice(i, 1); // Remove galinha do mapa
-                                    p.conn.send({type: 'status', msg: '🐓 Levando pro celeiro!'});
-                                    break;
-                                }
+                    // Bloquear bordas da fazenda
+                    p.x = Math.max(25, Math.min(cw - 25, p.x));
+                    p.y = Math.max(25, Math.min(ch - 25, p.y));
+
+                    // Trata Ação (Botão de pegar galinha pressionado)
+                    if (p.action && !p.hasChicken) {
+                        for (let i = 0; i < chickens.length; i++) {
+                            let c = chickens[i];
+                            if (Math.hypot(p.x - c.x, p.y - c.y) < p.radius + c.radius + 25) {
+                                p.hasChicken = true;
+                                chickens.splice(i, 1);
+                                p.conn.send({ type: 'status', msg: '🐓 CORRE PRO CELEIRO!' });
+                                break;
                             }
                         }
                     }
 
-                    // 2. Entregar no Celeiro (Automático ao encostar com a galinha)
-                    if (p.hasChicken) {
-                        let distToBarn = Math.hypot(p.x - barn.x, p.y - barn.y);
-                        if (distToBarn < barn.radius + 20) {
-                            p.hasChicken = false;
-                            p.score++;
-                            updateScoreboard();
-                            spawnChicken(); // Spawna uma nova
-                            p.conn.send({type: 'status', msg: '✨ Ponto! Pegue outra!'});
-                        }
+                    // Entrega no Celeiro
+                    if (p.hasChicken && Math.hypot(p.x - barn.x, p.y - barn.y) < barn.radius + 15) {
+                        p.hasChicken = false;
+                        p.score++;
+                        updateScoreboard();
+                        spawnChicken();
+                        p.conn.send({ type: 'status', msg: '✨ PONTO! Procure outra!' });
                     }
-                    
-                    p.radius = 20; // tamanho do hitbox do player
                 }
 
-                // IA das Galinhas
+                // IA Melhorada das Galinhas (Fuga inteligente + presas no mapa)
                 chickens.forEach(c => {
-                    // Muda de direção aleatoriamente
-                    c.timer++;
-                    if (c.timer > 60) {
-                        c.vx = (Math.random() - 0.5) * 3;
-                        c.vy = (Math.random() - 0.5) * 3;
-                        c.timer = 0;
+                    c.changeDirTimer--;
+                    if (c.changeDirTimer <= 0) {
+                        c.vx = (Math.random() - 0.5) * 2;
+                        c.vy = (Math.random() - 0.5) * 2;
+                        c.changeDirTimer = Math.random() * 120 + 60; // 2 a 3 segundos estável
                     }
 
-                    // Fuga simples se jogador chegar perto
-                    for(let id in players) {
+                    // Se afasta suavemente se um jogador sem galinha chegar perto
+                    for (let id in players) {
                         let p = players[id];
                         let dist = Math.hypot(p.x - c.x, p.y - c.y);
-                        if (dist < 100 && !p.hasChicken) {
-                            c.vx = (c.x - p.x) * 0.05;
-                            c.vy = (c.y - p.y) * 0.05;
+                        if (dist < 120 && !p.hasChicken) {
+                            // Calcula vetor de fuga oposto ao player
+                            let angle = Math.atan2(c.y - p.y, c.x - p.x);
+                            c.vx = Math.cos(angle) * 1.8;
+                            c.vy = Math.sin(angle) * 1.8;
                         }
                     }
 
                     c.x += c.vx;
                     c.y += c.vy;
 
-                    // Borda
-                    if(c.x < 20 || c.x > cw-20) c.vx *= -1;
-                    if(c.y < 20 || c.y > ch-20) c.vy *= -1;
+                    // NÃO FUGIREM DO MAPA: Quicam suavemente nas bordas internos e invertem direção
+                    if (c.x < 30) { c.x = 30; c.vx *= -1; }
+                    if (c.x > cw - 30) { c.x = cw - 30; c.vx *= -1; }
+                    if (c.y < 30) { c.y = 30; c.vy *= -1; }
+                    if (c.y > ch - 30) { c.y = ch - 30; c.vy *= -1; }
                 });
-            }
 
-            function draw(time) {
-                // Background
+                // 2. Renderização Visual
                 ctx.fillStyle = '#78e08f';
                 ctx.fillRect(0, 0, cw, ch);
 
-                // Celeiro
-                ctx.font = '80px Arial';
+                // Desenho do Celeiro Único
+                ctx.font = '85px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText('🏠', barn.x, barn.y);
                 
-                // Zona de entrega
                 ctx.beginPath();
-                ctx.arc(barn.x, barn.y, barn.radius, 0, Math.PI*2);
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.lineWidth = 5;
-                ctx.setLineDash([10, 10]);
+                ctx.arc(barn.x, barn.y, barn.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([8, 8]);
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Obstáculos
-                ctx.font = '40px Arial';
-                obstacles.forEach(o => {
-                    ctx.fillText(o.emoji, o.x, o.y);
-                });
+                // Desenho dos Cenários/Obstáculos
+                ctx.font = '42px Arial';
+                obstacles.forEach(o => ctx.fillText(o.emoji, o.x, o.y));
 
-                // Galinhas
-                ctx.font = '30px Arial';
-                chickens.forEach(c => {
-                    ctx.fillText('🐔', c.x, c.y);
-                });
+                // Desenho das Galinhas
+                ctx.font = '28px Arial';
+                chickens.forEach(c => ctx.fillText('🐔', c.x, c.y));
 
-                // Jogadores
+                // Desenho dos Personagens e Nomes
                 for (let id in players) {
                     let p = players[id];
-                    ctx.font = '40px Arial';
                     
-                    // Desenha aura da cor do jogador
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, 25, 0, Math.PI*2);
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                     ctx.fillStyle = p.color;
                     ctx.fill();
 
-                    // Emoji do player
+                    ctx.font = '38px Arial';
                     ctx.fillText('👨‍🌾', p.x, p.y);
-                    
-                    // Se tem galinha, desenha a galinha em cima
+
                     if (p.hasChicken) {
-                        ctx.font = '25px Arial';
-                        ctx.fillText('🐔', p.x, p.y - 25);
+                        ctx.font = '24px Arial';
+                        ctx.fillText('🐔', p.x, p.y - 28);
                     }
+
+                    // Nome acima do jogador
+                    ctx.font = 'bold 13px Arial';
+                    ctx.fillStyle = '#2c3e50';
+                    ctx.fillText(p.name, p.x, p.y - 42);
                 }
 
-                updatePhysics();
-                if (timeRemaining > 0) {
-                    requestAnimationFrame(draw);
-                }
+                if (timeRemaining > 0) requestAnimationFrame(gameLoop);
             }
-            requestAnimationFrame(draw);
 
             function endGame() {
                 document.getElementById('game-over-modal').style.display = 'block';
-                let winner = null;
-                let maxScore = -1;
-                for(let id in players) {
+                let winner = null, maxScore = -1;
+                for (let id in players) {
                     if (players[id].score > maxScore) {
                         maxScore = players[id].score;
                         winner = players[id];
                     }
                 }
-                
                 const winText = document.getElementById('winner-text');
                 if (winner && maxScore > 0) {
-                    winText.innerHTML = `Vencedor fez ${maxScore} pontos! <br><span style="color:${winner.color}">👨‍🌾</span>`;
+                    winText.innerHTML = `🏆 ${winner.name} VENCEU! <br> Fez ${maxScore} pontos na sacola!`;
                 } else {
-                    winText.innerText = "Empate ou nenhum ponto!";
+                    winText.innerText = "Ninguém pontuou! As galinhas venceram! 🐔";
                 }
             }
         }
 
-        // ================= CÓDIGO DO CLIENTE (CELULAR / CONTROLE) =================
+        // ================= JOGO NO CELULAR (CLIENTE) =================
         function initClientMode(hostId) {
             document.getElementById('client-screen').style.display = 'flex';
-            const statusEl = document.getElementById('client-status');
             
             const peer = new Peer();
-            let conn;
+            let conn = null;
+            
+            let joystickData = { x: 0, y: 0 };
+            let actionActive = false;
 
-            // O estado dos botões que será enviado ao HOST
-            let inputState = {
-                up: false,
-                down: false,
-                left: false,
-                right: false,
-                action: false
-            };
+            const setupScreen = document.getElementById('name-setup-screen');
+            const nameInput = document.getElementById('name-input');
+            const btnJoin = document.getElementById('btn-join-lobby');
+            const statusEl = document.getElementById('client-status');
+            const gamepadArea = document.getElementById('gamepad-area');
+
+            btnJoin.addEventListener('click', () => {
+                const name = nameInput.value.trim() || "Fazendeiro";
+                document.getElementById('player-display-name').innerText = name;
+                setupScreen.style.display = 'none'; // Some a tela de nome
+                
+                // Conecta de fato ao host do PC
+                statusEl.innerText = "Enviando registro para o PC...";
+                conn.send({ type: 'join', name: name });
+                
+                // Inicia loop de envio de inputs (30Hz)
+                setInterval(() => {
+                    if(conn && conn.open) {
+                        conn.send({
+                            type: 'input',
+                            joystick: joystickData,
+                            action: actionActive
+                        });
+                    }
+                }, 1000 / 30);
+            });
 
             peer.on('open', () => {
-                statusEl.innerText = "Conectando ao PC...";
-                conn = peer.connect(hostId, { reliable: false }); // Unreliable para input rápido é melhor
+                conn = peer.connect(hostId, { reliable: false });
 
                 conn.on('open', () => {
-                    statusEl.innerText = "🎮 Controle Ativo! Pegue galinhas!";
-                    
-                    // Envia inputs 30 vezes por segundo (Loop do controle)
-                    setInterval(() => {
-                        conn.send({ type: 'input', state: inputState });
-                    }, 1000 / 30);
+                    statusEl.innerText = "Digite seu nome acima para entrar na partida.";
                 });
 
-                // Recebe mensagens do Host (feedback)
                 conn.on('data', (data) => {
+                    if (data.type === 'start') {
+                        statusEl.innerText = "🎮 Partida Iniciada! Pegue as galinhas!";
+                        gamepadArea.style.display = 'flex'; // Exibe o controle analógico na tela
+                    }
                     if (data.type === 'status') {
                         statusEl.innerText = data.msg;
-                        // Vibra se suportado pelo celular
-                        if(navigator.vibrate) navigator.vibrate(50);
+                        if(navigator.vibrate) navigator.vibrate(40);
                     }
-                });
-
-                conn.on('close', () => {
-                    statusEl.innerText = "❌ Desconectado do PC.";
                 });
             });
 
-            // Lógica Touch / Mouse para os botões do Celular
-            function bindButton(btnId, actionName) {
-                const btn = document.getElementById(btnId);
-                
-                // Mapeia Touch e Mouse (para testar usando inspect element do navegador)
-                const press = (e) => { e.preventDefault(); inputState[actionName] = true; };
-                const release = (e) => { e.preventDefault(); inputState[actionName] = false; };
+            // --- DESENVOLVIMENTO DO JOYSTICK VIRTUAL REAL ---
+            const joystickZone = document.getElementById('joystick-container');
+            const knob = document.getElementById('joystick-knob');
+            const maxRadius = 55; // Limite máximo de arrasto físico do analógico
 
-                btn.addEventListener('touchstart', press, {passive: false});
-                btn.addEventListener('touchend', release, {passive: false});
-                btn.addEventListener('mousedown', press);
-                btn.addEventListener('mouseup', release);
-                btn.addEventListener('mouseleave', release);
+            function handleJoystickMove(clientX, clientY) {
+                const rect = joystickZone.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                let deltaX = clientX - centerX;
+                let deltaY = clientY - centerY;
+                let distance = Math.hypot(deltaX, deltaY);
+
+                if (distance > maxRadius) {
+                    deltaX = (deltaX / distance) * maxRadius;
+                    deltaY = (deltaY / distance) * maxRadius;
+                    distance = maxRadius;
+                }
+
+                // Move visualmente a bolinha interna do controle
+                knob.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+                // Envia valores normalizados de -1 a 1 para o Host
+                joystickData.x = deltaX / maxRadius;
+                joystickData.y = deltaY / maxRadius;
             }
 
-            bindButton('btn-up', 'up');
-            bindButton('btn-down', 'down');
-            bindButton('btn-left', 'left');
-            bindButton('btn-right', 'right');
-            bindButton('btn-action', 'action');
+            function resetJoystick() {
+                knob.style.transform = 'translate(0px, 0px)';
+                joystickData = { x: 0, y: 0 };
+            }
+
+            joystickZone.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY);
+            }, {passive: false});
+
+            joystickZone.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY);
+            }, {passive: false});
+
+            joystickZone.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                resetJoystick();
+            });
+
+            // Suporte para Mouse (Testes rápidos em emuladores Chrome Inspect)
+            let isMouseDown = false;
+            joystickZone.addEventListener('mousedown', (e) => { isMouseDown = true; handleJoystickMove(e.clientX, e.clientY); });
+            window.addEventListener('mousemove', (e) => { if(isMouseDown) handleJoystickMove(e.clientX, e.clientY); });
+            window.addEventListener('mouseup', () => { if(isMouseDown) { isMouseDown = false; resetJoystick(); } });
+
+            // --- BOTÃO DE AÇÃO TOUCH ---
+            const btnAction = document.getElementById('btn-action');
+            const setActionOn = (e) => { e.preventDefault(); actionActive = true; };
+            const setActionOff = (e) => { e.preventDefault(); actionActive = false; };
+
+            btnAction.addEventListener('touchstart', setActionOn, {passive: false});
+            btnAction.addEventListener('touchend', setActionOff, {passive: false});
+            btnAction.addEventListener('mousedown', setActionOn);
+            btnAction.addEventListener('mouseup', setActionOff);
         }
     </script>
 </body>
