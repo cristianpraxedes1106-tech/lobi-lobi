@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LóbiLóbi! - Hub Principal</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* Animação União União do Título */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(-3deg); }
+            50% { transform: translateY(-15px) rotate(3deg); }
+            100% { transform: translateY(0px) rotate(-3deg); }
+        }
+
+        .hub-title {
+            font-size: 70px;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: 5px 5px 0px #fdcb6e, 10px 10px 0px #e17055;
+            margin-bottom: 50px;
+            animation: float 4s ease-in-out infinite;
+            letter-spacing: 2px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 280px);
+            gap: 25px;
+            max-width: 600px;
+        }
+
+        .menu-btn {
+            background: white;
+            color: #2d3436;
+            border: none;
+            padding: 30px 20px;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 8px 0px #b2bec3;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Botão Ativo da Galinhada */
+        .btn-galinhada {
+            background: #ffeaa7;
+            color: #d63031;
+            box-shadow: 0 8px 0px #e17055;
+        }
+        .btn-galinhada:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 0px #e17055;
+            background: #fff;
+        }
+        .btn-galinhada:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0px #e17055;
+        }
+
+        /* Botões bloqueados (Em Breve) */
+        .btn-disabled {
+            background: #b2bec3;
+            color: #636e72;
+            box-shadow: 0 8px 0px #636e72;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .subtitle {
+            margin-top: 40px;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0,0,0,0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="hub-title">LóbiLóbi! 🕹️</h1>
+
+    <div class="menu-grid">
+        <button class="menu-btn btn-galinhada" onclick="abrirGalinhada()">
+            <span style="font-size: 45px;">🐔</span>
+            Galinhada!
+        </button>
+
+        <button class="menu-btn btn-disabled">
+            <span style="font-size: 45px;">🎲</span>
+            Em breve
+        </button>
+
+        <button class="menu-btn btn-disabled">
+            <span style="font-size: 45px;">🎨</span>
+            Em breve
+        </button>
+
+        <button class="menu-btn btn-disabled">
+            <span style="font-size: 45px;">🕵️</span>
+            Em breve
+        </button>
+    </div>
+
+    <div class="subtitle">Escolha um modo de jogo e divirta-se na TV ou Monitor!</div>
+
+    <script>
+        function abrirGalinhada() {
+            // Abre o arquivo galinhada.html em uma aba completamente nova sem derrubar o Hub
+            window.open("galinhada.html", "_blank");
+        }
+    </script>
+</body>
+</html>
