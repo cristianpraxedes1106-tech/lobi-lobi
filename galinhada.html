@@ -48,7 +48,6 @@
             position: relative;
         }
         
-        /* Moldura do Grande Caderno Aberto */
         .notebook-frame {
             width: 95%;
             max-width: 1300px;
@@ -88,10 +87,11 @@
             border: 2px solid #e9ecef;
         }
         
-        #scoreboard { font-size: 20px; font-weight: 600; color: #495057; }
-        #timer { font-size: 24px; font-weight: 700; color: #ff6b6b; background: #ffe3e3; padding: 5px 15px; border-radius: 12px; }
+        #scoreboard { font-size: 18px; font-weight: 600; color: #495057; display: flex; gap: 15px; flex-wrap: wrap; }
+        .hud-status-center { display: flex; align-items: center; gap: 15px; }
+        #chicken-counter { font-size: 20px; font-weight: 700; color: #fd7e14; background: #fff4e6; padding: 5px 15px; border-radius: 12px; border: 2px dashed #ffd8a8; }
+        #timer { font-size: 24px; font-weight: 700; color: #ff6b6b; background: #ffe3e3; padding: 5px 15px; border-radius: 12px; border: 2px solid #ffc9c9; }
         
-        /* Wrapper do Canvas para aplicar clipping das bordas */
         .canvas-container {
             flex: 1;
             width: 100%;
@@ -109,7 +109,6 @@
             height: 100%;
         }
         
-        /* Painel Lateral estilo Post-it Gigante */
         #lobby-panel { 
             position: absolute; 
             right: 40px; 
@@ -141,7 +140,6 @@
         }
         #btn-start-game:active { transform: translateY(4px); box-shadow: 0 2px 0px #2b8a3e; }
         
-        /* Modal Game Over Estilo Recorte */
         #game-over-modal { 
             display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ffdeeb; color: #a61e4d; padding: 40px; border-radius: 24px; text-align: center; border: 4px dashed #f783ac; box-shadow: 0 20px 40px rgba(0,0,0,0.2); z-index: 20; font-family: var(--font-main); 
         }
@@ -163,11 +161,9 @@
 
         #gamepad-area { display: none; justify-content: space-between; align-items: center; padding: 40px 20px; flex: 1; background: #f1f3f5; }
         
-        /* Joystick Redondinho Fofo */
         #joystick-container { width: 150px; height: 150px; background: #fff; border: 4px solid #ced4da; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 4px 8px rgba(0,0,0,0.05); }
         #joystick-knob { width: 70px; height: 70px; background: #4dadf7; border-radius: 50%; position: absolute; box-shadow: 0 6px 0px #1c7ed6; transition: transform 0.05s linear; }
         
-        /* Botão União de Pegar Galinha */
         #btn-action { width: 120px; height: 120px; border-radius: 50%; background: #ff922b; border: none; box-shadow: 0 8px 0px #d9480f; color: white; font-size: 50px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         #btn-action:active { transform: translateY(6px); box-shadow: 0 2px 0px #d9480f; }
         
@@ -180,8 +176,11 @@
         <div class="notebook-frame">
             <div class="notebook-page">
                 <div id="game-header">
-                    <div id="scoreboard">Aguardando fazendeiros pegadores de galinha... 🤠</div>
-                    <div id="timer">⏱️ 90s</div>
+                    <div id="scoreboard">Aguardando os fazendeiros... 🤠</div>
+                    <div class="hud-status-center">
+                        <div id="chicken-counter">🐔 Galinhas: 25</div>
+                        <div id="timer">⏱️ 90s</div>
+                    </div>
                 </div>
                 
                 <div class="canvas-container">
@@ -237,10 +236,6 @@
         const hostIdToJoin = urlParams.get('join');
         document.getElementById('loading').style.display = 'none';
 
-        // Dimensões do Mapa Expandido (O Universo do jogo)
-        const MAP_WIDTH = 1400;
-        const MAP_HEIGHT = 950;
-
         if (hostIdToJoin) {
             initClientMode(hostIdToJoin);
         } else {
@@ -255,33 +250,31 @@
             let players = {};
             let gameStarted = false;
             let timeRemaining = 90;
+            let chickenLimit = 25; // Limite padrão de galinhas atualizado na tela
 
             const canvas = document.getElementById('game-canvas');
             const ctx = canvas.getContext('2d');
 
-            // Ajusta resolução interna baseado no tamanho do container real
+            let cw = 0, ch = 0;
             function resizeCanvas() {
                 canvas.width = canvas.parentElement.clientWidth;
                 canvas.height = canvas.parentElement.clientHeight;
+                cw = canvas.width;
+                ch = canvas.height;
+                updateChickenCounter();
             }
             window.addEventListener('resize', resizeCanvas);
-            resizeCanvas();
-
-            // Elementos estruturais do mapa estilo Caderno Escolar
-            const barn = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2, radius: 70 };
+            
             const chickens = [];
             const obstacles = [];
 
-            // SPAWN DE BASTANTE GALINHA (35 galinhas no mega mapa)
-            for(let i = 0; i < 35; i++) spawnChicken(true);
-
-            // Geração de obstáculos espalhados pelo mapa
-            for(let i = 0; i < 18; i++) {
+            // Geração de obstáculos espalhados na área visível fixa
+            for(let i = 0; i < 12; i++) {
                 obstacles.push({
-                    x: Math.random() * (MAP_WIDTH - 200) + 100,
-                    y: Math.random() * (MAP_HEIGHT - 200) + 100,
-                    emoji: Math.random() > 0.5 ? '🌳' : '🪨',
-                    radius: 30
+                    x: Math.random() * 0.8 + 0.1, // posições percentuais para manter proporção
+                    y: Math.random() * 0.7 + 0.1,
+                    emoji: Math.random() > 0.4 ? '🌳' : '🪨',
+                    radius: 25
                 });
             }
 
@@ -295,18 +288,30 @@
 
                 conn.on('data', (data) => {
                     if (data.type === 'join') {
+                        // Calcula posição de spawn do jogador e seu celeiro próprio
+                        const angle = Math.random() * Math.PI * 2;
+                        const spawnRadius = 250;
+                        
                         players[playerId] = {
                             name: data.name,
-                            x: MAP_WIDTH / 2 + (Math.random() * 200 - 100),
-                            y: MAP_HEIGHT - 100,
+                            x: 0, // Definido dinamicamente no resize/start
+                            y: 0,
+                            pctX: Math.random() * 0.6 + 0.2, // Posição relativa para câmera estática funcionar em qualquer monitor
+                            pctY: Math.random() * 0.5 + 0.3,
                             color: `hsl(${Math.random() * 360}, 90%, 55%)`,
                             score: 0,
                             hasChicken: false,
-                            speed: 6,
+                            speed: 5,
                             joystick: { x: 0, y: 0 },
                             action: false,
-                            radius: 25,
-                            conn: conn
+                            radius: 22,
+                            conn: conn,
+                            // Definição do CELEIRO EXCLUSIVO deste jogador
+                            barn: {
+                                pctX: Math.random() * 0.8 + 0.1,
+                                pctY: Math.random() * 0.7 + 0.1,
+                                radius: 45
+                            }
                         };
                         updateLobbyUI();
                     }
@@ -336,21 +341,34 @@
                 listEl.innerHTML = pKeys.map(k => `<div style="color:${players[k].color}; font-weight:bold;">• ${players[k].name}</div>`).join('');
             }
 
+            function updateChickenCounter() {
+                document.getElementById('chicken-counter').innerText = `🐔 Galinhas no Campo: ${chickens.length}`;
+            }
+
             document.getElementById('btn-start-game').addEventListener('click', () => {
                 if (Object.keys(players).length === 0) {
                     alert("Aguarde pelo menos um fazendeiro entrar pelo celular!");
                     return;
                 }
                 if (!gameStarted) {
+                    resizeCanvas();
                     gameStarted = true;
                     document.getElementById('btn-start-game').disabled = true;
                     document.getElementById('btn-start-game').style.background = '#ced4da';
                     document.getElementById('btn-start-game').style.boxShadow = 'none';
                     
+                    // Inicializa posições reais baseadas no tamanho atual do monitor
                     for (let id in players) {
+                        let p = players[id];
+                        p.x = p.pctX * cw;
+                        p.y = p.pctY * ch;
                         players[id].conn.send({ type: 'start' });
                     }
+
+                    // Spawna a quantidade exata do limite definido
+                    for(let i = 0; i < chickenLimit; i++) spawnChicken();
                     
+                    updateScoreboard();
                     startTimer();
                     requestAnimationFrame(gameLoop);
                 }
@@ -360,7 +378,7 @@
                 const timerInterval = setInterval(() => {
                     timeRemaining--;
                     document.getElementById('timer').innerText = `⏱️ ${timeRemaining}s`;
-                    if (timeRemaining <= 0) {
+                    if (timeRemaining <= 0 || chickens.length === 0) {
                         clearInterval(timerInterval);
                         endGame();
                     }
@@ -370,34 +388,25 @@
             function updateScoreboard() {
                 let html = '';
                 for (let id in players) {
-                    html += `<b style="color:${players[id].color}; margin-right:20px;">${players[id].name}: ${players[id].score}</b>`;
+                    html += `<span style="background:${players[id].color}22; color:${players[id].color}; border:2px solid ${players[id].color}; padding:4px 12px; border-radius:8px; font-weight:bold;">${players[id].name}: ${players[id].score}</span>`;
                 }
                 document.getElementById('scoreboard').innerHTML = html || "Partida em andamento!";
             }
 
-            function spawnChicken(initial = false) {
-                let rx, ry;
-                if (initial) {
-                    rx = Math.random() * (MAP_WIDTH - 100) + 50;
-                    ry = Math.random() * (MAP_HEIGHT - 100) + 50;
-                } else {
-                    // Renasce distante do celeiro central
-                    rx = Math.random() > 0.5 ? Math.random() * 300 : MAP_WIDTH - Math.random() * 300;
-                    ry = Math.random() > 0.5 ? Math.random() * 300 : MAP_HEIGHT - Math.random() * 300;
-                }
+            function spawnChicken() {
                 chickens.push({
-                    x: rx, y: ry,
-                    vx: (Math.random() - 0.5) * 2.5,
-                    vy: (Math.random() - 0.5) * 2.5,
-                    radius: 16,
+                    x: Math.random() * (cw - 100) + 50,
+                    y: Math.random() * (ch - 100) + 50,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: (Math.random() - 0.5) * 3,
+                    radius: 15,
                     changeDirTimer: Math.random() * 100
                 });
+                updateChickenCounter();
             }
 
             function gameLoop() {
-                // ---- 1. CÁLCULO DE FÍSICA E POSIÇÕES ----
-                let avgX = 0, avgY = 0, activePlayersCount = 0;
-
+                // ---- 1. CÁLCULO DE MOVIMENTAÇÃO (CÂMERA ESTÁTICA FIXA) ----
                 for (let id in players) {
                     let p = players[id];
                     let currentSpeed = p.hasChicken ? p.speed * 0.6 : p.speed;
@@ -405,142 +414,119 @@
                     p.x += p.joystick.x * currentSpeed;
                     p.y += p.joystick.y * currentSpeed;
 
-                    p.x = Math.max(30, Math.min(MAP_WIDTH - 30, p.x));
-                    p.y = Math.max(30, Math.min(MAP_HEIGHT - 30, p.y));
+                    // Trava os jogadores estritamente dentro da tela do canvas visível
+                    p.x = Math.max(25, Math.min(cw - 25, p.x));
+                    p.y = Math.max(25, Math.min(ch - 25, p.y));
 
-                    avgX += p.x; avgY += p.y;
-                    activePlayersCount++;
-
-                    // Ação de Captura
+                    // Ação de Captura de Galinha
                     if (p.action && !p.hasChicken) {
                         for (let i = 0; i < chickens.length; i++) {
                             let c = chickens[i];
-                            if (Math.hypot(p.x - c.x, p.y - c.y) < p.radius + c.radius + 20) {
+                            if (Math.hypot(p.x - c.x, p.y - c.y) < p.radius + c.radius + 18) {
                                 p.hasChicken = true;
                                 chickens.splice(i, 1);
-                                p.conn.send({ type: 'status', msg: '🐓 CORRE PRO CELEIRO CENTRAL!' });
+                                updateChickenCounter();
+                                p.conn.send({ type: 'status', msg: '🐓 PEGO! CORRE PRO SEU CELEIRO!' });
                                 break;
                             }
                         }
                     }
 
-                    // Entrega das Galinhas no Celeiro Central
-                    if (p.hasChicken && Math.hypot(p.x - barn.x, p.y - barn.y) < barn.radius + p.radius) {
+                    // Entrega EXCLUSIVA no Celeiro próprio daquela pessoa
+                    let bX = p.barn.pctX * cw;
+                    let bY = p.barn.pctY * ch;
+                    if (p.hasChicken && Math.hypot(p.x - bX, p.y - bY) < p.barn.radius + 10) {
                         p.hasChicken = false;
                         p.score++;
                         updateScoreboard();
-                        spawnChicken();
-                        p.conn.send({ type: 'status', msg: '✨ PONTO EXCELENTE! Pegue mais!' });
+                        p.conn.send({ type: 'status', msg: '✨ PONTO! Seu celeiro agradece!' });
                     }
                 }
 
-                // Inteligência Artificial de Movimento das Galinhas
+                // Movimentação das Galinhas
                 chickens.forEach(c => {
                     c.changeDirTimer--;
                     if (c.changeDirTimer <= 0) {
-                        c.vx = (Math.random() - 0.5) * 3;
-                        c.vy = (Math.random() - 0.5) * 3;
+                        c.vx = (Math.random() - 0.5) * 3.5;
+                        c.vy = (Math.random() - 0.5) * 3.5;
                         c.changeDirTimer = Math.random() * 100 + 40;
-                    }
-
-                    // Fuga Dinâmica caso o jogador se aproxime
-                    for (let id in players) {
-                        let p = players[id];
-                        if (Math.hypot(p.x - c.x, p.y - c.y) < 140 && !p.hasChicken) {
-                            let angle = Math.atan2(c.y - p.y, c.x - p.x);
-                            c.vx = Math.cos(angle) * 3.5;
-                            c.vy = Math.sin(angle) * 3.5;
-                        }
                     }
 
                     c.x += c.vx; c.y += c.vy;
 
-                    // Colisão elástica suave contra as bordas externas do mapa caderno
-                    if (c.x < 40 || c.x > MAP_WIDTH - 40) c.vx *= -1;
-                    if (c.y < 40 || c.y > MAP_HEIGHT - 40) c.vy *= -1;
+                    // Batem nas bordas fixas da tela e quicam
+                    if (c.x < 30 || c.x > cw - 30) c.vx *= -1;
+                    if (c.y < 30 || c.y > ch - 30) c.vy *= -1;
                 });
 
-                // ---- 2. SITEMA DE CÂMERA DINÂMICA (Foca no centro dos jogadores ativos) ----
-                let camX = MAP_WIDTH / 2 - canvas.width / 2;
-                let camY = MAP_HEIGHT / 2 - canvas.height / 2;
-
-                if (activePlayersCount > 0) {
-                    let targetCamX = (avgX / activePlayersCount) - canvas.width / 2;
-                    let targetCamY = (avgY / activePlayersCount) - canvas.height / 2;
-                    
-                    // Limita a câmera aos limites físicos do mapa do caderno
-                    camX = Math.max(0, Math.min(MAP_WIDTH - canvas.width, targetCamX));
-                    camY = Math.max(0, Math.min(MAP_HEIGHT - canvas.height, targetCamY));
-                }
-
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.save();
-                ctx.translate(-camX, -camY);
-
-                // ---- RENDERIZAR O CHÃO DE CADERNO QUADRICULADO ----
+                // ---- 2. RENDERIZAÇÃO ESTÁTICA NA FOLHA ----
                 ctx.fillStyle = '#fffdf7';
-                ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+                ctx.fillRect(0, 0, cw, ch);
 
-                ctx.strokeStyle = '#e0e6ed';
+                // Desenho do Chão Quadriculado de Caderno
+                ctx.strokeStyle = '#e8edf2';
                 ctx.lineWidth = 1;
-                const gridSize = 35;
-                for (let x = 0; x < MAP_WIDTH; x += gridSize) {
-                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_HEIGHT); ctx.stroke();
+                const gridSize = 32;
+                for (let x = 0; x < cw; x += gridSize) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ch); ctx.stroke();
                 }
-                for (let y = 0; y < MAP_HEIGHT; y += gridSize) {
-                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_WIDTH, y); ctx.stroke();
+                for (let y = 0; y < ch; y += gridSize) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw, y); ctx.stroke();
                 }
 
-                // Margens vermelhas e azuis típicas de caderno escolar nas bordas
-                ctx.strokeStyle = '#ff8787'; ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(40, MAP_HEIGHT); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(MAP_WIDTH - 40, 0); ctx.lineTo(MAP_WIDTH - 40, MAP_HEIGHT); ctx.stroke();
+                // Desenhar as Árvores e Pedras de obstáculo estáticos
+                ctx.font = '36px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                obstacles.forEach(o => {
+                    ctx.fillText(o.emoji, o.x * cw, o.y * ch);
+                });
 
-                // Desenho do Celeiro Principal (Alvo)
-                ctx.font = '95px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('🏠', barn.x, barn.y);
-                ctx.font = 'bold 16px var(--font-main)'; ctx.fillStyle = '#495057';
-                ctx.fillText('CELEIRO', barn.x, barn.y + 60);
+                // DESENHO DOS CELEIROS INDIVIDUAIS DE CADA PESSOA (Cores combinando com o jogador)
+                for (let id in players) {
+                    let p = players[id];
+                    let bX = p.barn.pctX * cw;
+                    let bY = p.barn.pctY * ch;
 
-                // Linha pontilhada de gol ao redor do celeiro
-                ctx.beginPath(); ctx.arc(barn.x, barn.y, barn.radius, 0, Math.PI * 2);
-                ctx.strokeStyle = '#4dadf7'; ctx.lineWidth = 3; ctx.setLineDash([6, 6]);
-                ctx.stroke(); ctx.setLineDash([]);
+                    // Círculo colorido pontilhado marcando a zona do celeiro dele
+                    ctx.beginPath(); ctx.arc(bX, bY, p.barn.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = p.color; ctx.lineWidth = 3; ctx.setLineDash([4, 4]);
+                    ctx.stroke(); ctx.setLineDash([]);
 
-                // Desenho dos Elementos Estáticos (Árvores/Rochas)
-                ctx.font = '46px Arial';
-                obstacles.forEach(o => ctx.fillText(o.emoji, o.x, o.y));
+                    // Desenho da casinha/celeiro
+                    ctx.font = '55px Arial';
+                    ctx.fillText('🏠', bX, bY);
 
-                // Desenho da Multidão de Galinhas
-                ctx.font = '32px Arial';
+                    // Placa com o nome do dono em cima do celeiro dele
+                    ctx.font = 'bold 11px var(--font-main)';
+                    ctx.fillStyle = '#495057';
+                    ctx.fillText(`DE: ${p.name.toUpperCase()}`, bX, bY + 36);
+                }
+
+                // Desenho das Galinhas vivas restantes no mapa
+                ctx.font = '28px Arial';
                 chickens.forEach(c => ctx.fillText('🐔', c.x, c.y));
 
-                // Desenho dos Fazendeiros Conectados
+                // Desenho dos Fazendeiros
                 for (let id in players) {
                     let p = players[id];
                     
-                    // Círculo base indicador do jogador
                     ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                     ctx.fillStyle = p.color; ctx.fill();
-                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
 
-                    // Desenho do Avatar emoji
-                    ctx.font = '40px Arial';
+                    ctx.font = '34px Arial';
                     ctx.fillText('👨‍🌾', p.x, p.y);
 
                     if (p.hasChicken) {
-                        ctx.font = '26px Arial';
-                        ctx.fillText('🐔', p.x, p.y - 32);
+                        ctx.font = '22px Arial';
+                        ctx.fillText('🐔', p.x, p.y - 26);
                     }
 
-                    // Nome estilizado fixado em cima
-                    ctx.font = 'bold 14px var(--font-main)';
+                    ctx.font = 'bold 12px var(--font-main)';
                     ctx.fillStyle = '#212529';
-                    ctx.fillText(p.name, p.x, p.y - 48);
+                    ctx.fillText(p.name, p.x, p.y - 38);
                 }
 
-                ctx.restore();
-                if (timeRemaining > 0) requestAnimationFrame(gameLoop);
+                if (timeRemaining > 0 && chickens.length > 0) requestAnimationFrame(gameLoop);
             }
 
             function endGame() {
@@ -554,11 +540,13 @@
                 }
                 const winText = document.getElementById('winner-text');
                 if (winner && maxScore > 0) {
-                    winText.innerHTML = `🥇 ${winner.name} dominou o galinheiro! <br> Guardou ${maxScore} galinhas na conta!`;
+                    winText.innerHTML = `👑 ${winner.name} foi o melhor fazendeiro! <br> Entregou ${maxScore} galinhas no próprio celeiro!`;
                 } else {
-                    winText.innerText = "Fim de papo! Ninguém pontuou e as galinhas escaparam! 🐔";
+                    winText.innerText = "Fim de papo! Ninguém conseguiu pontuar nos celeiros! 🐔";
                 }
             }
+            
+            resizeCanvas();
         }
 
         // ================= INTERFACE MOBILE (CONTROLE) =================
@@ -594,11 +582,11 @@
             peer.on('open', () => {
                 conn = peer.connect(hostId, { reliable: false });
                 conn.on('open', () => {
-                    statusEl.innerText = "Pronto! Escreva seu nome acima para validar.";
+                    statusEl.innerText = "Pronto! Confirme seu nome para sincronizar.";
                 });
                 conn.on('data', (data) => {
                     if (data.type === 'start') {
-                        statusEl.innerText = "🏃‍♂️ PARTIDA INICIADA! COLOQUE AS GALINHAS NO CELEIRO!";
+                        statusEl.innerText = "🏃‍♂️ ENTREGA NA SUA CASINHA CORRESPONDENTE!";
                         gamepadArea.style.display = 'flex';
                     }
                     if (data.type === 'status') {
@@ -608,7 +596,6 @@
                 });
             });
 
-            // Joystick Virtual Dinâmico
             const joystickZone = document.getElementById('joystick-container');
             const knob = document.getElementById('joystick-knob');
             const maxRadius = 55;
@@ -647,7 +634,6 @@
 
             joystickZone.addEventListener('touchend', (e) => { e.preventDefault(); resetJoystick(); });
 
-            // Botão de Captura
             const btnAction = document.getElementById('btn-action');
             const setActionOn = (e) => { e.preventDefault(); actionActive = true; };
             const setActionOff = (e) => { e.preventDefault(); actionActive = false; };
