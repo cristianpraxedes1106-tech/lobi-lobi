@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lóbi Lóbi - Controle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --primary: #38bdf8;
+            --success: #22c55e;
+            --surface: #1e293b;
+        }
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; touch-action: manipulation; }
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 400px;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeIn 0.4s ease-out;
+        }
+        .screen.active { display: flex; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        input {
+            width: 100%;
+            padding: 1.2rem;
+            font-size: 1.5rem;
+            border-radius: 16px;
+            border: 2px solid var(--surface);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            text-align: center;
+            outline: none;
+            text-transform: uppercase;
+        }
+        input:focus { border-color: var(--primary); }
+
+        button {
+            width: 100%;
+            padding: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 900;
+            border-radius: 20px;
+            border: none;
+            background: var(--primary);
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.2);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        button:active {
+            transform: translateY(8px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.2);
+        }
+        button.ready {
+            background: var(--success);
+            color: white;
+            pointer-events: none;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="screen active">
+        <h2 style="text-align: center; margin-bottom: 0;">Entrar na Sala</h2>
+        <input type="text" id="roomCodeInput" placeholder="CÓDIGO (EX: LOBI)" maxlength="4">
+        <input type="text" id="nicknameInput" placeholder="SEU NOME" maxlength="12">
+        <button id="btnJoin">ENTRAR</button>
+    </div>
+
+    <div id="lobby-screen" class="screen">
+        <h2 style="text-align: center;">Sala <span id="displayRoom" style="color: var(--primary);"></span></h2>
+        <button id="btnReady">ESTOU PRONTO!</button>
+        <p style="text-align: center; color: #94a3b8; margin-top: 2rem;">Olhe para a tela principal</p>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentRoom = '';
+
+        // UI Elements
+        const loginScreen = document.getElementById('login-screen');
+        const lobbyScreen = document.getElementById('lobby-screen');
+        const roomCodeInput = document.getElementById('roomCodeInput');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const btnJoin = document.getElementById('btnJoin');
+        const btnReady = document.getElementById('btnReady');
+        const displayRoom = document.getElementById('displayRoom');
+
+        // Se a URL já tiver o código (vindo do QR Code), preenche automático
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('room')) {
+            roomCodeInput.value = urlParams.get('room');
+            nicknameInput.focus();
+        }
+
+        btnJoin.addEventListener('click', () => {
+            const roomCode = roomCodeInput.value.toUpperCase();
+            const nickname = nicknameInput.value.trim();
+            if (roomCode.length === 4 && nickname) {
+                currentRoom = roomCode;
+                socket.emit('player:join', { roomCode, nickname });
+            }
+        });
+
+        socket.on('player:joinedSuccess', (player) => {
+            loginScreen.classList.remove('active');
+            lobbyScreen.classList.add('active');
+            displayRoom.innerText = currentRoom;
+        });
+
+        socket.on('player:error', (err) => {
+            alert(err.message); // Na v1.0, trocaremos por um toast bonito
+        });
+
+        btnReady.addEventListener('click', () => {
+            socket.emit('player:ready', { roomCode: currentRoom });
+            btnReady.innerText = 'AGUARDANDO O HOST...';
+            btnReady.classList.add('ready');
+            // Vibração no celular se suportado
+            if (navigator.vibrate) navigator.vibrate(50);
+        });
+
+        socket.on('room:closed', () => {
+            alert('O host fechou a sala.');
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>
