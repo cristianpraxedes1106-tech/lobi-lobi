@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lóbi Lóbi - Host</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface: rgba(255, 255, 255, 0.05);
+            --accent: #38bdf8;
+            --text-main: #f8fafc;
+        }
+        body {
+            margin: 0;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 50%, #1e293b, var(--bg-color));
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .lobby-container {
+            display: flex;
+            gap: 4rem;
+            align-items: stretch;
+        }
+        .join-panel {
+            background: var(--surface);
+            padding: 3rem;
+            border-radius: 24px;
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .room-code {
+            font-size: 5rem;
+            font-weight: 800;
+            letter-spacing: 10px;
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+            margin: 1rem 0;
+        }
+        #players-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            min-width: 400px;
+        }
+        .player-card {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 16px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            opacity: 0; /* Para animação de entrada do GSAP */
+            transform: translateY(20px);
+        }
+        .player-card.ready {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="lobby-container">
+        <div class="join-panel">
+            <h2>Escaneie para jogar</h2>
+            <div id="qrcode" style="margin: 2rem auto; width: 200px; height: 200px; background: white; border-radius: 12px; padding: 10px;"></div>
+            <p>ou acesse lobi.game e digite:</p>
+            <div class="room-code" id="roomCodeDisplay">----</div>
+        </div>
+
+        <div class="players-panel">
+            <h2>Jogadores na sala (<span id="playerCount">0</span>/8)</h2>
+            <div id="players-grid">
+                </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <script>
+        const socket = io();
+        const playersGrid = document.getElementById('players-grid');
+        
+        // Inicializa o host
+        socket.emit('host:createRoom');
+
+        socket.on('host:roomCreated', ({ roomCode }) => {
+            document.getElementById('roomCodeDisplay').innerText = roomCode;
+            // Aqui inicializaríamos a lib qrcode.js usando a URL + roomCode
+        });
+
+        socket.on('host:playerJoined', (player) => {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            card.id = `player-${player.id}`;
+            card.innerHTML = `<span>${player.nickname}</span> <span class="status">⌛</span>`;
+            playersGrid.appendChild(card);
+
+            // Animação elegante de entrada com GSAP
+            gsap.to(card, { opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.7)" });
+            document.getElementById('playerCount').innerText = playersGrid.children.length;
+        });
+
+        socket.on('host:playerReady', (player) => {
+            const card = document.getElementById(`player-${player.id}`);
+            card.classList.add('ready');
+            card.querySelector('.status').innerText = '✔️';
+            
+            // Microinteração de pulso quando fica pronto
+            gsap.fromTo(card, { scale: 1.05 }, { scale: 1, duration: 0.3, ease: "power2.out" });
+        });
+    </script>
+</body>
+</html>
